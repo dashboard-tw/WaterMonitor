@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台灣水庫即時水情 - 由 dashboard.tw 提供 API 服務</title>
+
+  <!-- Favicon & Icons -->
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon.png">
+  <link rel="apple-touch-icon" href="/icon.png">
+
+  <!-- Open Graph / Facebook / Discord -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://water.kevin.com.tw/">
+  <meta property="og:title" content="台灣水庫即時水情 - 由 dashboard.tw 提供 API 服務">
+  <meta property="og:description" content="全臺水庫即時水情觀測儀表板，即時串接經濟部水利署資料，提供蓄水率、蓄水量、水位與警戒狀態視覺化呈現。">
+  <meta property="og:image" content="https://water.kevin.com.tw/og-image.png">
+  <meta property="og:site_name" content="dashboard.tw WaterMonitor">
+  <meta name="theme-color" content="#38bdf8">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="台灣水庫即時水情 - 由 dashboard.tw 提供 API 服務">
+  <meta name="twitter:description" content="全臺水庫即時水情觀測儀表板，即時串接經濟部水利署資料，提供蓄水率、蓄水量、水位與警戒狀態視覺化呈現。">
+  <meta name="twitter:image" content="https://water.kevin.com.tw/og-image.png">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --border: #334155;
+      --good: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 28px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .title-group h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .title-group p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input, select, button {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+    button {
+      background: #0284c7;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0369a1;
+    }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .stats-bar {
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .reservoir-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .reservoir-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .reservoir-name {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .major-tag {
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+    .percentage-display {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .pct-val {
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+    .pct-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .progress-bar-bg {
+      background: #334155;
+      height: 10px;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.5s ease-out;
+    }
+    .details {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .detail-row span:last-child {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+    .status-good { color: var(--good); }
+    .status-warn { color: var(--warning); }
+    .status-danger { color: var(--danger); }
+    .fill-good { background: var(--good); }
+    .fill-warn { background: var(--warning); }
+    .fill-danger { background: var(--danger); }
+
+    footer {
+      max-width: 1200px;
+      margin: 40px auto 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    .loading-state, .error-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>台灣即時水庫水情資訊</h1>
+      <p>資料由 <a href="https://dashboard.tw" target="_blank" style="color:var(--primary); text-decoration:none;">dashboard.tw</a> 開放資料 API 提供</p>
+    </div>
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="搜尋水庫名稱...">
+      <select id="filterType">
+        <option value="major">主要水庫</option>
+        <option value="all">全部水庫</option>
+        <option value="warning">蓄水量警戒 (&lt;50%)</option>
+      </select>
+      <button id="refreshBtn">即時重新整理</button>
+    </div>
+  </header>
+
+  <section class="stats-bar">
+    <div class="stat-card">
+      <div class="label">主要水庫平均蓄水率</div>
+      <div class="value" id="avgPct">--%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">水庫總數</div>
+      <div class="value" id="totalCount">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">蓄水率良好 (&gt;75%)</div>
+      <div class="value status-good" id="goodCount">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">蓄水偏低 (&lt;50%)</div>
+      <div class="value status-danger" id="dangerCount">--</div>
+    </div>
+  </section>
+
+  <main class="grid" id="reservoirGrid">
+    <div class="loading-state">正在載入最新水庫數據...</div>
+  </main>
+
+  <footer>
+    <p>
+      由 <a href="https://dashboard.tw" target="_blank">dashboard.tw</a> 提供 API 服務 ｜ 
+      資料來源：<a href="https://dashboard.tw/developers/datasets/reservoir_obs" target="_blank">經濟部水利署 水庫水情（每小時）</a> ｜ 
+      <a href="https://github.com/dashboard-tw/WaterMonitor" target="_blank">GitHub</a>
+    </p>
+  </footer>
+
+  <script>
+    let allReservoirs = [];
+
+    async function loadData() {
+      const grid = document.getElementById('reservoirGrid');
+      try {
+        const res = await fetch('/api/reservoirs');
+        if (!res.ok) throw new Error('API 連線失敗');
+        const data = await res.json();
+
+        const sitesMap = {};
+        const siteList = (data.sites && (data.sites.data || data.sites.sites)) || [];
+        siteList.forEach(s => {
+          sitesMap[s.reservoir_id] = s;
+        });
+
+        const rows = (data.latest && (data.latest.data || data.latest.rows)) || [];
+        allReservoirs = rows.map(r => {
+          const siteInfo = sitesMap[r.reservoir_id] || {};
+          return {
+            id: r.reservoir_id,
+            name: siteInfo.name || r.reservoir_id,
+            is_major: !!siteInfo.is_major,
+            capacity: siteInfo.effective_capacity,
+            pct: r.storage_pct !== null && r.storage_pct !== undefined ? Number(r.storage_pct) : null,
+            storage: r.effective_storage,
+            inflow: r.inflow,
+            outflow: r.total_outflow,
+            level: r.water_level,
+            observed_at: r.observed_at
+          };
+        }).filter(r => r.name);
+
+        render();
+        updateStats();
+      } catch (err) {
+        console.error('載入失敗:', err);
+        grid.innerHTML = `
+          <div class="error-state">
+            <p style="font-size: 1.1rem; margin-bottom: 8px;">暫時無法取得最新水情資料</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">可能是網路暫時不穩定或伺服器正在更新中</p>
+            <button onclick="loadData()" style="padding: 6px 16px;">重新嘗試</button>
+          </div>
+        `;
+      }
+    }
+
+    function updateStats() {
+      const majors = allReservoirs.filter(r => r.is_major && r.pct !== null);
+      if (majors.length > 0) {
+        const avg = majors.reduce((acc, cur) => acc + cur.pct, 0) / majors.length;
+        document.getElementById('avgPct').textContent = `${avg.toFixed(1)}%`;
+      }
+
+      document.getElementById('totalCount').textContent = allReservoirs.length;
+      document.getElementById('goodCount').textContent = allReservoirs.filter(r => r.pct !== null && r.pct >= 75).length;
+      document.getElementById('dangerCount').textContent = allReservoirs.filter(r => r.pct !== null && r.pct < 50).length;
+    }
+
+    function render() {
+      const grid = document.getElementById('reservoirGrid');
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filter = document.getElementById('filterType').value;
+
+      let list = allReservoirs.filter(r => {
+        if (search && !r.name.toLowerCase().includes(search)) return false;
+        if (filter === 'major') return r.is_major;
+        if (filter === 'warning') return r.pct !== null && r.pct < 50;
+        return true;
+      });
+
+      if (list.length === 0) {
+        grid.innerHTML = '<div class="loading-state">沒有找到符合條件的水庫</div>';
+        return;
+      }
+
+      grid.innerHTML = list.map(r => {
+        const pct = r.pct !== null ? r.pct.toFixed(1) : '--';
+        let statusClass = 'status-good';
+        let fillClass = 'fill-good';
+        if (r.pct !== null) {
+          if (r.pct < 30) {
+            statusClass = 'status-danger';
+            fillClass = 'fill-danger';
+          } else if (r.pct < 60) {
+            statusClass = 'status-warn';
+            fillClass = 'fill-warn';
+          }
+        }
+
+        const barWidth = r.pct !== null ? Math.min(Math.max(r.pct, 0), 100) : 0;
+        const observedTime = r.observed_at ? new Date(r.observed_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) : '--';
+
+        return `
+          <div class="reservoir-card">
+            <div class="card-header">
+              <span class="reservoir-name">${r.name}</span>
+              ${r.is_major ? '<span class="major-tag">主要水庫</span>' : ''}
+            </div>
+            <div class="percentage-display">
+              <span class="pct-val ${statusClass}">${pct}</span>
+              <span class="pct-label">% 蓄水率</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill ${fillClass}" style="width: ${barWidth}%"></div>
+            </div>
+            <div class="details">
+              <div class="detail-row">
+                <span>有效蓄水量</span>
+                <span>${r.storage !== null ? `${Number(r.storage).toLocaleString()} 萬立方公尺` : '--'}</span>
+              </div>
+              <div class="detail-row">
+                <span>當前水位</span>
+                <span>${r.level !== null ? `${r.level} m` : '--'}</span>
+              </div>
+              <div class="detail-row">
+                <span>最後觀測時間</span>
+                <span>${observedTime}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('searchInput').addEventListener('input', render);
+    document.getElementById('filterType').addEventListener('change', render);
+    const refreshBtn = document.getElementById('refreshBtn');
+    let cooldown = false;
+    refreshBtn.addEventListener('click', () => {
+      if (cooldown) return;
+      cooldown = true;
+      refreshBtn.disabled = true;
+      let secondsLeft = 10;
+      refreshBtn.textContent = `冷卻中 (${secondsLeft}s)`;
+
+      const timer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(timer);
+          cooldown = false;
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = '即時重新整理';
+        } else {
+          refreshBtn.textContent = `冷卻中 (${secondsLeft}s)`;
+        }
+      }, 1000);
+
+      document.getElementById('reservoirGrid').innerHTML = '<div class="loading-state">正在更新水庫數據...</div>';
+      loadData();
+    });
+
+    loadData();
+  </script>
+</body>
+</html>

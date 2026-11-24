@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- 背景深色科技漸層 -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- 外圈光暈漸層 -->
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- 主水滴科技漸層 -->
+    <linearGradient id="dropGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <!-- 波浪內部漸層 -->
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- 剪裁遮罩：限制波浪在水滴內部 -->
+    <clipPath id="dropClip">
+      <path d="M256,70 C256,70 120,225 120,335 C120,410 180,460 256,460 C332,460 392,410 392,335 C392,225 256,70 256,70 Z" />
+    </clipPath>
+
+    <!-- 柔和陰影 -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0284c7" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- 圓角外框背景（App Icon 規格） -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="111" fill="none" stroke="url(#glowGrad)" stroke-width="3" />
+
+  <!-- 主水滴（帶發光陰影） -->
+  <path d="M256,70 C256,70 120,225 120,335 C120,410 180,460 256,460 C332,460 392,410 392,335 C392,225 256,70 256,70 Z"
+        fill="url(#dropGrad)"
+        filter="url(#dropShadow)" />
+
+  <!-- 水滴內部的動態蓄水波浪（象徵水庫水情） -->
+  <g clip-path="url(#dropClip)">
+    <!-- 底層後波浪 -->
+    <path d="M100,340 C160,320 200,360 260,335 C320,310 360,345 420,330 L420,480 L100,480 Z"
+          fill="#0369a1" opacity="0.6" />
+    <!-- 前層翠綠/青藍波浪（象徵健康蓄水量） -->
+    <path d="M100,360 C150,340 210,375 270,355 C330,335 370,365 420,350 L420,480 L100,480 Z"
+          fill="url(#waveGrad)" />
+    <!-- 科技感水平刻度線（象徵水庫水位觀測） -->
+    <line x1="160" y1="280" x2="200" y2="280" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+    <line x1="160" y1="315" x2="220" y2="315" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+    <line x1="160" y1="350" x2="195" y2="350" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  </g>
+
+  <!-- 水滴頂部的高光反光弧線 -->
+  <path d="M256,105 C256,105 160,230 150,320 C145,260 220,150 256,105 Z"
+        fill="#ffffff"
+        opacity="0.35" />
+</svg>

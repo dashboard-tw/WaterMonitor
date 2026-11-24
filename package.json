@@ -1,0 +1,12 @@
+{
+  "name": "dashboard.tw-water-monitor",
+  "version": "1.0.0",
+  "description": "Taiwan Reservoir & Hydrology Monitor using dashboard.tw Open Data API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["dashboard.tw", "taiwan", "opendata", "reservoir", "water"],
+  "author": "dashboard.tw",
+  "license": "MIT"
+}
